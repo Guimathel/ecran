@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#0F1418">
+<link rel="manifest" href="manifest.webmanifest">
+<link rel="icon" href="../jarvis/icon-192.png">
+<meta name="mobile-web-app-capable" content="yes">
+<title>Écran maison</title>
+<style>
+:root{--bg:#0F1418;--card:#182027;--tile:#212C36;--tile-off:#151C22;--line:#3A4A57;--btn:#2A3844;--txt:#EAF0F3;--mute:#8FA1AD;--soft:#B3C0C9;--amber:#F2A154;--cyan:#5CC8D7;--green:#6FD39A;--red:#FF8A80}
+*{box-sizing:border-box}
+html,body{margin:0;height:100%;background:var(--bg);color:var(--txt);font-family:system-ui,-apple-system,"Segoe UI",Roboto,sans-serif;overflow:hidden;-webkit-user-select:none;user-select:none;touch-action:manipulation}
+button{font:inherit;color:inherit;cursor:pointer}
+button:disabled{opacity:.4;cursor:not-allowed}
+#app{height:100%;padding:max(12px,1.6vmin);display:grid;gap:max(10px,1.4vmin);grid-template-rows:auto minmax(0,1fr) auto;grid-template-columns:minmax(0,1fr)}
+.card{background:var(--card);border-radius:22px;padding:max(12px,1.6vmin);min-height:0}
+.row{display:flex;align-items:center;gap:12px}
+h2{margin:0;font-size:clamp(16px,2.4vmin,22px);font-weight:800}
+.mute{color:var(--mute)}
+#date{display:block;background:none;border:0;padding:0;text-align:left;font-weight:500}
+/* en-tête */
+#head{display:grid;grid-template-columns:auto minmax(0,1fr) auto;gap:max(10px,1.4vmin);align-items:stretch}
+#clock{font-size:clamp(40px,8vmin,72px);font-weight:800;line-height:1;letter-spacing:-.02em}
+#date{font-size:clamp(13px,2.1vmin,18px);color:var(--mute);margin-top:4px}
+#wx{display:flex;align-items:center;gap:16px;overflow:hidden}
+#wx .ico{font-size:clamp(34px,6vmin,54px);line-height:1}
+#wx .t{font-size:clamp(30px,5.4vmin,46px);font-weight:800;line-height:1}
+#wx .d{font-size:clamp(12px,1.9vmin,15px);color:var(--mute);margin-top:4px}
+#days{margin-left:auto;display:flex;gap:8px}
+.day{background:#1F2A33;border-radius:14px;padding:8px 12px;min-width:92px;font-size:clamp(12px,1.9vmin,15px)}
+.day b{display:block;font-size:clamp(13px,2.1vmin,16px)}
+#side{display:flex;flex-direction:column;gap:8px;min-width:170px}
+.pill{height:42px;border-radius:21px;border:1px solid var(--line);background:#1F2A33;font-weight:700;font-size:15px;padding:0 14px;display:flex;align-items:center;justify-content:center;gap:8px}
+.dot{width:10px;height:10px;border-radius:5px;background:var(--green);display:inline-block}
+.dot.bad{background:var(--red)}
+/* corps */
+#main{display:grid;grid-template-columns:minmax(0,1.55fr) minmax(0,1fr);gap:max(10px,1.4vmin);min-height:0}
+#heat{display:flex;flex-direction:column;gap:10px}
+#rooms{flex:1;min-height:0;display:grid;grid-template-columns:repeat(5,minmax(0,1fr));grid-auto-rows:minmax(0,1fr);gap:8px}
+.room{background:var(--tile);border:1px solid var(--line);border-radius:18px;padding:10px;display:flex;flex-direction:column;gap:4px;min-height:0;min-width:0}
+.room.off{background:var(--tile-off);border-color:#26323B}
+.room.man{border-color:var(--amber)}
+.room .m{font-size:11px;font-weight:700;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);display:flex;justify-content:space-between}
+.room .n{font-size:clamp(12px,1.9vmin,15px);font-weight:700;line-height:1.2}
+.room .v{font-size:clamp(24px,4.6vmin,36px);font-weight:800;line-height:1.05;letter-spacing:-.02em}
+.room .c{font-size:clamp(11px,1.8vmin,14px);color:var(--soft);font-weight:600}
+.room .b{margin-top:auto;display:flex;justify-content:space-between}
+.rb{width:clamp(38px,6vmin,48px);height:clamp(38px,6vmin,48px);border-radius:50%;border:1px solid var(--line);background:var(--btn);font-size:24px;font-weight:700;line-height:1;display:flex;align-items:center;justify-content:center;padding:0}
+.rb.up{background:var(--amber);border:none;color:#1A1208}
+#right{display:flex;flex-direction:column;gap:max(10px,1.4vmin);min-height:0}
+#tv{display:flex;flex-direction:column;gap:12px;flex:1}
+.chip{font-size:14px;font-weight:700;border-radius:14px;padding:6px 12px;background:#26323B;color:var(--soft)}
+.chip.on{background:#17382B;color:#8EE0B2}
+.circ{width:clamp(44px,7vmin,60px);height:clamp(44px,7vmin,60px);flex:0 0 auto;border-radius:50%;border:1px solid var(--line);background:var(--btn);display:flex;align-items:center;justify-content:center;padding:0;font-size:22px;font-weight:700}
+.circ.pw{border:none}
+.circ.pw.on{background:var(--cyan);color:#06242A}
+#bar{height:12px;border-radius:6px;background:var(--btn);overflow:hidden}
+#bar i{display:block;height:100%;background:var(--cyan);width:0}
+.apps{display:flex;gap:10px;margin-top:auto}
+.apps button{flex:1;height:clamp(44px,7vmin,56px);border-radius:16px;border:1px solid var(--line);background:#1F2A33;font-weight:700;font-size:15px}
+#foot{display:flex;gap:10px}
+.sc{flex:1;min-width:0;height:clamp(58px,9.5vmin,80px);border-radius:20px;border:2px solid var(--card);background:var(--card);padding:0 10px;text-align:left;display:flex;flex-direction:column;justify-content:center;gap:2px}
+.sc b{font-size:clamp(15px,2.4vmin,18px)}
+.sc span{font-size:clamp(11px,1.8vmin,13px);color:var(--soft)}
+.sc.act{background:#243B46;border-color:var(--cyan)}
+.jv{flex:0 0 clamp(180px,22vw,260px);height:clamp(58px,9.5vmin,80px);border-radius:20px;border:none;background:var(--amber);color:#1A1208;font-weight:800;font-size:clamp(15px,2.4vmin,18px);display:flex;align-items:center;justify-content:center;gap:10px;text-decoration:none}
+/* veille / connexion / toast */
+#sleep{position:fixed;inset:0;z-index:20;background:#05080A;display:none;flex-direction:column;align-items:center;justify-content:center;gap:14px;color:#5E6E79;border:0;width:100%}
+#sleep.on{display:flex}
+#sleep .big{font-size:min(22vmin,130px);font-weight:800;color:#7C8C97;line-height:1}
+#toast{position:fixed;left:50%;bottom:max(14px,2vmin);transform:translateX(-50%);background:#2A3844;border:1px solid var(--line);border-radius:14px;padding:10px 18px;font-weight:600;z-index:30;display:none;max-width:90vw}
+#toast.bad{border-color:var(--red);color:#FFD2CE}
+#login{position:fixed;inset:0;z-index:40;background:var(--bg);display:none;flex-direction:column;align-items:center;justify-content:center;gap:16px;text-align:center;padding:24px}
+#login a{background:var(--amber);color:#1A1208;font-weight:800;border-radius:16px;padding:14px 22px;text-decoration:none}
+#modal,#brief,#alert{position:fixed;inset:0;z-index:25;background:rgba(5,8,10,.8);display:none;align-items:center;justify-content:center;padding:20px}
+#modal.on,#brief.on,#alert.on{display:flex}
+#alert{z-index:28}
+.dlg{background:var(--card);border:1px solid var(--line);border-radius:26px;padding:24px;max-width:560px;width:100%;display:flex;flex-direction:column;gap:14px}
+.dlg h2{font-size:24px}
+.dlg button{height:64px;border-radius:18px;border:1px solid var(--line);background:#1F2A33;font-weight:800;font-size:18px}
+.dlg button.pri{background:var(--amber);color:#1A1208;border:none}
+.dlg p{margin:0;font-size:18px;line-height:1.45}
+.dlg .who{font-size:13px;font-weight:800;letter-spacing:.06em;text-transform:uppercase;color:var(--mute);margin-top:6px}
+#agenda{position:fixed;inset:0;z-index:26;background:rgba(5,8,10,.85);display:none;align-items:center;justify-content:center;padding:14px}
+#agenda.on{display:flex}
+#agenda .dlg{max-width:760px;max-height:100%;overflow:auto;gap:10px;padding:18px}
+.agh{display:flex;align-items:center;justify-content:space-between}
+.agh h2{text-transform:capitalize;font-size:22px}
+.agh button{width:52px;height:52px;border-radius:50%;font-size:22px;padding:0}
+.cal{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;text-align:center}
+.cal .dw{font-size:12px;color:var(--mute);font-weight:700}
+.cal button{height:46px;border-radius:12px;font-size:16px;font-weight:700;position:relative;padding:0;border:1px solid transparent;background:#1F2A33}
+.cal button.today{border-color:var(--cyan)}
+.cal button.sel{background:var(--amber);color:#1A1208}
+.cal button.hasr::after{content:"";position:absolute;bottom:5px;left:50%;width:6px;height:6px;margin-left:-3px;border-radius:50%;background:var(--cyan)}
+.cal button.sel.hasr::after{background:#1A1208}
+.rl{display:flex;flex-direction:column;gap:6px}
+#today{grid-column:1/-1;display:none;gap:10px;align-items:center;overflow-x:auto;scrollbar-width:none}
+#today.on{display:flex}
+.tdi{flex:0 0 auto;display:flex;align-items:center;gap:10px;background:var(--card);border:2px solid var(--amber);border-radius:18px;padding:6px 16px 6px 8px;font-weight:700;font-size:clamp(15px,2.5vmin,21px);white-space:nowrap}
+.tdi.past{opacity:.5;border-color:var(--line)}
+.tdi .h{color:var(--amber)}.tdi .q{font-size:.7em;color:var(--mute);text-transform:uppercase}
+.tdi .gifbox.sm .em{font-size:28px}
+.gifbox{display:flex;justify-content:center;align-items:center;gap:12px;margin:8px 0;flex-wrap:wrap}.gifbox img{max-height:210px;max-width:100%;border-radius:14px}.gifbox .em{font-size:92px;line-height:1}.gifbox.sm{margin:0}.gifbox.sm img{width:46px;height:46px;max-height:none;border-radius:10px;object-fit:cover}.gifbox.sm .em{font-size:30px}
+.ri{display:flex;align-items:center;gap:10px;background:#1F2A33;border-radius:12px;padding:8px 12px;font-size:16px}
+.ri .t{flex:1;min-width:0}.ri .w{font-size:12px;font-weight:800;color:var(--mute);text-transform:uppercase}
+.ri button{width:40px;height:40px;border-radius:50%;font-size:16px;padding:0;border:1px solid var(--line);background:var(--btn)}
+.addf{display:flex;gap:6px;flex-wrap:wrap}
+.addf input,.addf select{height:48px;border-radius:12px;border:1px solid var(--line);background:#1F2A33;color:var(--txt);font:inherit;font-size:16px;padding:0 10px;-webkit-user-select:text;user-select:text}
+.addf input[type=text]{flex:1 1 200px}
+.addf button{height:48px;padding:0 18px;font-size:16px}
+/* portrait */
+@media (orientation:portrait){
+  #head{grid-template-columns:auto minmax(0,1fr)}
+  #side{grid-column:1 / -1;flex-direction:row}
+  #side .pill{flex:1}
+  #days{display:none}
+  #today{flex-wrap:wrap;overflow:visible}
+  #main{grid-template-columns:minmax(0,1fr);grid-template-rows:minmax(0,1fr) auto}
+  #tv{flex:none}
+  .room .v{font-size:clamp(22px,3.6vmin,30px)}
+  .room .apps{margin-top:0}
+  #rooms{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .room{flex-direction:row;align-items:center;gap:8px}
+  .room .col{flex:1;min-width:0;display:flex;flex-direction:column;gap:2px}
+  .room .b{margin:0;gap:6px}
+  #foot{flex-wrap:wrap}
+  .sc{flex:1 1 30%}
+  .jv{flex:1 1 100%}
+}
+</style>
+</head>
+<body>
+<div id="app">
+  <header id="head">
+    <div><div id="clock">--:--</div><button id="date" aria-label="Ouvrir l'agenda"></button></div>
+    <div class="card" id="wx"><div class="ico" id="wico">…</div>
+      <div><div class="t" id="wtemp">--°</div><div class="d" id="wdesc">Météo en cours de chargement</div></div>
+      <div id="days"></div>
+    </div>
+    <div id="side">
+      <button class="pill" id="season">Mode hiver</button>
+      <div class="pill" style="border-color:transparent;background:var(--card)" id="relay"><span class="dot bad" id="rdot"></span><span id="rtxt">Relais ?</span></div>
+      <button class="pill" id="sleepbtn" aria-label="Mettre l'écran en veille">🌙 Veille</button>
+    </div>
+    <div id="today" aria-label="Aujourd'hui"></div>
+  </header>
+
+  <main id="main">
+    <section class="card" id="heat">
+      <div class="row" style="justify-content:space-between"><h2>Radiateurs</h2><span class="mute" id="hsum" style="font-size:14px;font-weight:600"></span></div>
+      <div id="rooms"></div>
+    </section>
+    <div id="right">
+      <section class="card" id="tv">
+        <div class="row" style="justify-content:space-between"><h2>Télévision</h2><span class="chip" id="tvchip">…</span></div>
+        <div class="row">
+          <button class="circ pw" id="tvpw" aria-label="Allumer ou éteindre la télévision">⏻</button>
+          <button class="circ" id="vdn" aria-label="Baisser le volume">−</button>
+          <div style="flex:1;min-width:0"><div id="bar"><i></i></div><div class="mute" id="vtxt" style="font-size:14px;margin-top:6px;font-weight:600"></div></div>
+          <button class="circ" id="vup" aria-label="Monter le volume">+</button>
+          <button class="circ" id="vmu" aria-label="Couper ou remettre le son">🔇</button>
+        </div>
+        <div class="apps"><button id="ahome">Accueil</button><button id="aibo">IBO Player</button></div>
+      </section>
+    </div>
+  </main>
+
+  <footer id="foot">
+    <button class="sc" id="s-confort"><b>Confort</b><span>RDC 23° · reste 21°</span></button>
+    <button class="sc" id="s-nuit"><b>Nuit</b><span>RDC 18° · reste 17°</span></button>
+    <button class="sc" id="s-soiree"><b>Soirée</b><span>RDC 23° · TV</span></button>
+    <button class="sc" id="s-bonjour"><b>Bonjour</b><span>Chauffage · météo</span></button>
+    <button class="sc" id="s-absent"><b>Je pars</b><span>Tout à 18°</span></button>
+    <button class="sc" id="s-back"><b>Je rentre</b><span>Comme Confort</span></button>
+    <a class="jv" href="../jarvis/">🎤 Parler à Jarvis</a>
+  </footer>
+</div>
+
+<button id="sleep" aria-label="Réveiller l'écran"><div class="big" id="sclock">--:--</div><div style="font-size:clamp(16px,3vmin,24px);font-weight:600">Touche l'écran pour le réveiller</div></button>
+<div id="modal"><div class="dlg" role="dialog" aria-label="Soirée"><h2>Soirée : on met quoi ?</h2>
+  <button class="pri" id="m-ibo">IBO Player</button><button id="m-music">Musique</button><button id="m-none">Seulement le chauffage</button></div></div>
+<div id="brief"><div class="dlg" role="dialog" aria-label="Bonjour"><h2 id="bh">Bonjour</h2><div id="bb"></div><button class="pri" id="bclose">OK</button></div></div>
+<div id="agenda"><div class="dlg" role="dialog" aria-label="Agenda">
+  <div class="agh"><button id="agprev" aria-label="Mois précédent">‹</button><h2 id="agtitle"></h2><button id="agnext" aria-label="Mois suivant">›</button></div>
+  <div class="cal" id="cal"></div>
+  <div class="who" id="agday" style="margin-top:4px"></div>
+  <div class="rl" id="agrows"></div>
+  <div class="addf"><select id="agwho" aria-label="Pour qui"><option value="tous">Tous</option><option value="guillaume">Guillaume</option><option value="marion">Marion</option></select>
+    <input type="text" id="agtxt" maxlength="200" placeholder="Nouveau rappel" aria-label="Texte du rappel">
+    <input type="time" id="agtime" aria-label="Heure"><select id="agrep" aria-label="Répétition"><option value="day">Ce jour</option><option value="all">Tous les jours</option><option value="year">Chaque année</option></select>
+    <button class="pri" id="agadd">Ajouter</button></div>
+  <button id="agclose">Fermer</button></div></div>
+<div id="alert"><div class="dlg" role="alertdialog" aria-label="Rappel"><h2 id="alh">Rappel</h2><div id="algif" class="gifbox"></div><p id="altxt" style="font-size:26px"></p><button class="pri" id="alok">OK</button></div></div>
+<div id="toast" role="status"></div>
+<div id="login"><h2>Connexion nécessaire</h2><div class="mute">Connecte-toi d'abord dans Jarvis, puis reviens ici.</div><a href="../jarvis/">Ouvrir Jarvis</a></div>
+
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+<script>
+"use strict";
+const CONFIG = {
+  SUPABASE_URL: "https://qcmfubynjidftonhrldt.supabase.co",
+  SUPABASE_KEY: "sb_publishable_M9MRnq1rsD7WQ5Ors-8BOg_DVqandAa",
+  LAT: 47.71, LON: 6.95,            // Rougemont-le-Château (approx.)
+  SLEEP_FROM: "23:00", SLEEP_TO: "06:30",
+  WAKE_SECONDS: 60,                 // après un toucher de nuit, l'écran se rendort au bout de ce délai
+  STATE_POLL_MS: 5000, STALE_SECONDS: 180,
+};
+const $ = (id) => document.getElementById(id);
+const sb = window.supabase.createClient(CONFIG.SUPABASE_URL, CONFIG.SUPABASE_KEY, {
+  auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false },
+});
+
+/* ---------- Aides ---------- */
+const fmt = (n) => (Number.isInteger(n) ? String(n) : n.toFixed(1).replace(".", ","));
+let toastTimer;
+function toast(msg, bad) {
+  const t = $("toast"); t.textContent = msg; t.className = bad ? "bad" : ""; t.style.display = "block";
+  clearTimeout(toastTimer); toastTimer = setTimeout(() => (t.style.display = "none"), bad ? 6000 : 2500);
+}
+const mins = (hhmm) => { const [h, m] = hhmm.split(":").map(Number); return h * 60 + m; };
+function inSleepWindow(d = new Date()) {
+  const n = d.getHours() * 60 + d.getMinutes(), a = mins(CONFIG.SLEEP_FROM), b = mins(CONFIG.SLEEP_TO);
+  return a > b ? (n >= a || n < b) : (n >= a && n < b);
+}
+
+/* ---------- Horloge ---------- */
+function tick() {
+  const d = new Date();
+  const hm = d.toLocaleTimeString("fr-FR", { hour: "2-digit", minute: "2-digit" });
+  $("clock").textContent = hm; $("sclock").textContent = hm;
+  const s = d.toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  $("date").textContent = "📅 " + s.charAt(0).toUpperCase() + s.slice(1);
+  checkSleep();
+}
+
+/* ---------- Veille ---------- */
+let manualSleep = false, wakeUntil = 0;
+function setSleep(on) { $("sleep").classList.toggle("on", on); }
+function checkSleep() {
+  const night = inSleepWindow() && Date.now() > wakeUntil;
+  setSleep(manualSleep || night);
+}
+$("sleepbtn").onclick = () => { manualSleep = true; checkSleep(); };
+$("sleep").onclick = () => {
+  manualSleep = false;
+  if (inSleepWindow()) wakeUntil = Date.now() + CONFIG.WAKE_SECONDS * 1000;
+  checkSleep();
+};
+document.addEventListener("pointerdown", () => { if (inSleepWindow() && Date.now() < wakeUntil) wakeUntil = Date.now() + CONFIG.WAKE_SECONDS * 1000; }, true);
+let lock = null;
+async function keepAwake() {
+  try { if ("wakeLock" in navigator && document.visibilityState === "visible") lock = await navigator.wakeLock.request("screen"); } catch { /* refusé */ }
+}
+document.addEventListener("visibilitychange", keepAwake);
+
+/* ---------- Météo (Open-Meteo, sans clé) ---------- */
+let WXNOW = null;
+const WX = (c) => c === 0 ? ["☀️", "Ciel dégagé"] : c <= 2 ? ["🌤️", "Éclaircies"] : c === 3 ? ["☁️", "Couvert"]
+  : c <= 48 ? ["🌫️", "Brouillard"] : c <= 57 ? ["🌦️", "Bruine"] : c <= 67 ? ["🌧️", "Pluie"] : c <= 77 ? ["🌨️", "Neige"]
+  : c <= 82 ? ["🌦️", "Averses"] : c <= 86 ? ["🌨️", "Averses de neige"] : ["⛈️", "Orage"];
+async function weather() {
+  try {
+    const u = `https://api.open-meteo.com/v1/forecast?latitude=${CONFIG.LAT}&longitude=${CONFIG.LON}&current=temperature_2m,apparent_temperature,weather_code,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min&timezone=Europe%2FParis&forecast_days=4`;
+    const j = await (await fetch(u)).json();
+    const c = j.current, [ico, desc] = WX(c.weather_code);
+    $("wico").textContent = ico; $("wtemp").textContent = Math.round(c.temperature_2m) + "°";
+    $("wdesc").textContent = `${desc} · ressenti ${Math.round(c.apparent_temperature)}° · vent ${Math.round(c.wind_speed_10m)} km/h`;
+    WXNOW = { temp: Math.round(c.temperature_2m), desc: desc.toLowerCase(), max: Math.round(j.daily.temperature_2m_max[0]), min: Math.round(j.daily.temperature_2m_min[0]) };
+    $("days").innerHTML = [1, 2, 3].map((i) => {
+      const name = new Date(j.daily.time[i] + "T12:00").toLocaleDateString("fr-FR", { weekday: "long" });
+      return `<div class="day"><b>${name.charAt(0).toUpperCase() + name.slice(1)}</b>${Math.round(j.daily.temperature_2m_max[i])}° / ${Math.round(j.daily.temperature_2m_min[i])}°<br><span class="mute">${WX(j.daily.weather_code[i])[1]}</span></div>`;
+    }).join("");
+  } catch { $("wdesc").textContent = "Météo indisponible"; }
+}
+
+/* ---------- Ordres (passent par la fonction SQL panel_command) ---------- */
+async function track(id) {
+  for (let i = 0; i < 18; i++) {
+    await new Promise((r) => setTimeout(r, 1500));
+    const { data } = await sb.from("home_commands").select("status,result").eq("id", id).maybeSingle();
+    if (!data) continue;
+    if (data.status === "failed") { toast("Échec : " + (data.result || "erreur"), true); return; }
+    if (data.status === "done") { setTimeout(fetchState, 2500); return; }
+  }
+}
+async function cmd(args, okMsg) {
+  const { data, error } = await sb.rpc("panel_command", args);
+  if (error) { toast(error.message.replace(/^.*?:\s*/, ""), true); return false; }
+  if (okMsg) toast(okMsg);
+  track(data); return true;
+}
+
+/* ---------- État de la maison ---------- */
+let st = null, stAt = 0, lastKey = "";
+const pend = new Map();   // pièce -> { target, timer, until }
+async function fetchState() {
+  const { data: s } = await sb.auth.getSession();
+  if (!s.session) { $("login").style.display = "flex"; return; }
+  $("login").style.display = "none";
+  const { data, error } = await sb.from("home_state").select("data,updated_at").eq("id", 1).maybeSingle();
+  if (error || !data) { st = null; render(); return; }
+  st = data.data; stAt = new Date(data.updated_at).getTime();
+  render();
+}
+const MODE = { auto: "Prog.", manual: "Manuel", off: "Éteint", modified_auto: "Prog. modif." };
+function roomView(r) {
+  const p = pend.get(r.name);
+  const target = p && Date.now() < p.until ? p.target : r.target;
+  const mode = p && Date.now() < p.until ? "manual" : r.mode;
+  return { ...r, target, mode };
+}
+function render() {
+  const fresh = st && Date.now() - stAt < CONFIG.STALE_SECONDS * 1000;
+  $("rdot").className = "dot" + (fresh ? "" : " bad");
+  $("rtxt").textContent = fresh ? "Relais en ligne" : "Relais hors ligne";
+  const ete = st?.season === "ete";
+  $("season").textContent = ete ? "☀️ Mode été" : "❄️ Mode hiver";
+  $("hsum").textContent = ete ? "Mode été · tout éteint" : "Mode hiver";
+  const rooms = (st?.rooms || []).map(roomView);
+  const key = JSON.stringify([rooms, st?.tv, st?.scene, ete, fresh]);
+  if (key === lastKey) return; lastKey = key;
+  const box = $("rooms");
+  box.innerHTML = "";
+  rooms.forEach((r) => {
+    const off = r.mode === "off";
+    const d = document.createElement("div");
+    d.className = "room" + (off ? " off" : r.mode === "manual" ? " man" : "");
+    const now = r.now == null ? "--" : fmt(r.now) + "°";
+    d.innerHTML = `<div class="col"><div class="m"><span>${MODE[r.mode] || r.mode}</span><span>${r.active ? "🔥" : ""}</span></div>
+      <div class="n"></div><div class="v">${now}</div>
+      <div class="c">${off ? "Éteint" : "Consigne " + (r.target == null ? "--" : fmt(r.target)) + "°"}</div></div>
+      <div class="b"><button class="rb" aria-label="Baisser">−</button><button class="rb up" aria-label="Monter">+</button></div>`;
+    d.querySelector(".n").textContent = r.name;
+    const [dn, up] = d.querySelectorAll(".rb");
+    dn.disabled = up.disabled = ete || !fresh;
+    dn.onclick = () => adjust(r, -0.5); up.onclick = () => adjust(r, 0.5);
+    box.appendChild(d);
+  });
+  const tv = st?.tv || {};
+  $("tvchip").textContent = tv.on === true ? "Allumée" : tv.on === false ? "En veille" : "Inconnu";
+  $("tvchip").className = "chip" + (tv.on ? " on" : "");
+  $("tvpw").className = "circ pw" + (tv.on ? " on" : "");
+  const v = tv.volume;
+  $("bar").firstElementChild.style.width = v && !v.muted ? Math.round((v.level / (v.max || 100)) * 100) + "%" : "0";
+  $("vtxt").textContent = !v ? "" : v.muted ? "Son coupé" : `Volume ${v.level} sur ${v.max}`;
+  ["confort", "nuit", "soiree", "bonjour", "absent"].forEach((k) => $("s-" + k).classList.toggle("act", st?.scene === k));
+  document.querySelectorAll("#foot .sc, #tv button").forEach((b) => (b.disabled = !fresh));
+}
+function adjust(r, step) {
+  const base = r.mode === "off" ? (r.now ? Math.round(r.now * 2) / 2 : 19) : r.target;
+  const target = Math.min(25, Math.max(7, base + step));
+  const p = pend.get(r.name) || {};
+  clearTimeout(p.timer);
+  pend.set(r.name, {
+    target, until: Date.now() + 20000,
+    timer: setTimeout(() => cmd({ p_action: "heat", p_op: "set", p_room: r.name, p_temp: target }), 1200),
+  });
+  lastKey = ""; render();
+}
+
+/* ---------- Boutons ---------- */
+const act = (id, args, msg) => ($(id).onclick = () => cmd(args, msg));
+$("tvpw").onclick = () => cmd({ p_action: st?.tv?.on ? "off" : "on" }, st?.tv?.on ? "Extinction…" : "Allumage…");
+act("vup", { p_action: "volume_up", p_amount: 1 });
+act("vdn", { p_action: "volume_down", p_amount: 1 });
+act("vmu", { p_action: "mute" });
+act("ahome", { p_action: "home" });
+act("aibo", { p_action: "app", p_name: "ibo" }, "IBO Player…");
+act("s-confort", { p_action: "heat", p_op: "scene", p_name: "confort" }, "Scène Confort…");
+act("s-nuit", { p_action: "heat", p_op: "scene", p_name: "nuit" }, "Scène Nuit…");
+act("s-absent", { p_action: "heat", p_op: "scene", p_name: "absent" }, "Tout à 18°…");
+act("s-back", { p_action: "heat", p_op: "scene", p_name: "confort" }, "Retour : mode confort…");
+$("season").onclick = () => {
+  const ete = st?.season === "ete";
+  if (!ete && !confirm("Passer en mode été : tous les radiateurs seront éteints. Continuer ?")) return;
+  cmd({ p_action: "heat", p_op: "season", p_name: ete ? "hiver" : "ete" });
+};
+
+/* ---------- Soirée ---------- */
+async function askJarvis(text) {
+  const { data } = await sb.auth.getSession();
+  if (!data.session) throw new Error("non connecté");
+  const r = await fetch(CONFIG.SUPABASE_URL + "/functions/v1/hyper-processor", {
+    method: "POST",
+    headers: { "Content-Type": "application/json", Authorization: "Bearer " + data.session.access_token, apikey: CONFIG.SUPABASE_KEY },
+    body: JSON.stringify({ message: text, mode: "rapide", stream: false }),
+  });
+  const j = await r.json().catch(() => ({}));
+  return j.reply || j.error || "";
+}
+const closeModal = () => $("modal").classList.remove("on");
+$("s-soiree").onclick = () => $("modal").classList.add("on");
+$("modal").onclick = (e) => { if (e.target === $("modal")) closeModal(); };
+$("m-none").onclick = () => { closeModal(); cmd({ p_action: "heat", p_op: "scene", p_name: "soiree" }, "Soirée…"); };
+$("m-ibo").onclick = async () => {
+  closeModal();
+  if (await cmd({ p_action: "heat", p_op: "scene", p_name: "soiree" }, "Soirée…")) cmd({ p_action: "app", p_name: "ibo" });
+};
+$("m-music").onclick = async () => {
+  closeModal();
+  if (!(await cmd({ p_action: "heat", p_op: "scene", p_name: "soiree" }, "Soirée…"))) return;
+  try { toast(((await askJarvis("Mets de la musique d'ambiance pour la soirée sur la télé, une playlist YouTube.")) || "Musique demandée").slice(0, 160)); }
+  catch { toast("Jarvis n'a pas répondu pour la musique.", true); }
+};
+
+/* ---------- Animations selon l'événement : mets tes GIF dans le dossier gifs/ (nom = champ f + .gif) ---------- */
+const GIFS = [
+  { f: "anniversaire", e: "🎂", k: ["anniversaire", "anniv", "joyeux anniversaire"] },
+  { f: "sage-femme", e: "🤰", k: ["sage-femme", "sage femme", "sagefemme"] },
+  { f: "dentiste", e: "🦷", k: ["dentiste"] },
+  { f: "medecin", e: "🩺", k: ["medecin", "docteur", "generaliste", "pediatre", "ophtalmo", "kine", "kinesitherapeute", "radio", "analyse", "prise de sang"] },
+  { f: "coiffeur", e: "💇", k: ["coiffeur", "coiffeuse", "coiffure"] },
+  { f: "vacances", e: "🏖️", k: ["vacances", "conges", "week-end", "weekend"] },
+  { f: "soiree", e: "🎉", k: ["soiree", "famille", "parents", "amis", "diner", "apero", "barbecue", "repas", "fete"] },
+];
+const normT = (t) => String(t).toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g, "");
+const GIFRE = GIFS.map((g) => ({ g, re: new RegExp("(^|[^a-z0-9])(" + g.k.map((k) => normT(k).replace(/[.*+?^${}()|[\]\\]/g, "\\$&")).join("|") + ")([^a-z0-9]|$)") }));
+function gifFor(text) { const t = normT(text || ""); const m = GIFRE.find((x) => x.re.test(t)); return m ? m.g : null; }
+// Variantes : f.gif, f2.gif … f6.gif ; on repère celles qui existent au démarrage et on en tire une au hasard.
+GIFS.forEach((g) => {
+  g.files = [];
+  for (let i = 1; i <= 6; i++) { const n = g.f + (i === 1 ? "" : i) + ".gif", im = new Image(); im.onload = () => g.files.push(n); im.src = "../jarvis/gifs/" + n; }
+});
+function gifEl(g, small) {
+  const box = document.createElement("div"); box.className = "gifbox" + (small ? " sm" : "");
+  const emoji = () => { const sp = document.createElement("span"); sp.className = "em"; sp.textContent = g.e; return sp; };
+  if (!g.files.length) { box.appendChild(emoji()); return box; }
+  const img = document.createElement("img"); img.alt = ""; img.src = "../jarvis/gifs/" + g.files[Math.floor(Math.random() * g.files.length)];
+  img.onerror = () => img.replaceWith(emoji());
+  box.appendChild(img); return box;
+}
+
+/* ---------- Bonjour : chauffage + météo + rappels du jour ---------- */
+let briefTimer;
+function closeBrief() { $("brief").classList.remove("on"); clearTimeout(briefTimer); try { speechSynthesis.cancel(); } catch { /* rien */ } }
+$("bclose").onclick = closeBrief;
+$("brief").onclick = (e) => { if (e.target === $("brief")) closeBrief(); };
+async function briefing() {
+  const d = new Date(), iso = d.toLocaleDateString("sv-SE");
+  let parts = [], rap = [];
+  if (WXNOW) parts.push(`Il fait ${WXNOW.temp} degrés, ${WXNOW.desc}. Aujourd'hui entre ${WXNOW.min} et ${WXNOW.max} degrés.`);
+  const { data } = await sb.from("rappels").select("qui,texte,heure,jour,repete").eq("fait", false).or(`jour.eq.${iso},jour.is.null,repete.eq.annuel`).order("heure", { nullsFirst: true });
+  rap = (data || []).filter((r) => r.jour === null || onDay(r, iso));
+  const ic = await sb.from("agenda_icloud").select("qui,heure,texte").eq("jour", iso).order("heure", { nullsFirst: true });
+  rap = [...rap, ...(ic.data || [])];
+  const by = (q) => rap.filter((r) => r.qui === q || r.qui === "tous").map((r) => (r.heure ? r.heure.slice(0, 5) + " : " : "") + r.texte);
+  const g = by("guillaume"), m = by("marion");
+  const box = $("bb"); box.innerHTML = "";
+  const add = (cls, txt) => { const e = document.createElement(cls === "who" ? "div" : "p"); if (cls === "who") e.className = "who"; e.textContent = txt; box.appendChild(e); };
+  if (WXNOW) add("p", parts[0]);
+  const seen = new Set();
+  rap.forEach((r) => { const g = gifFor(r.texte); if (g && !seen.has(g.f) && seen.size < 3) { seen.add(g.f); box.appendChild(gifEl(g, false)); } });
+  add("who", "Guillaume"); (g.length ? g : ["Aucun rappel."]).forEach((t) => add("p", t));
+  add("who", "Marion"); (m.length ? m : ["Aucun rappel."]).forEach((t) => add("p", t));
+  $("bh").textContent = d.getHours() < 12 ? "Bonjour" : "Bonjour, voici ta journée";
+  $("brief").classList.add("on");
+  clearTimeout(briefTimer); briefTimer = setTimeout(closeBrief, 90000);
+  try {
+    const say = ["Bonjour.", ...parts, g.length ? "Pour Guillaume : " + g.join(". ") : "Rien de prévu pour Guillaume.", m.length ? "Pour Marion : " + m.join(". ") : "Rien de prévu pour Marion."].join(" ");
+    speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance(say); u.lang = "fr-FR"; speechSynthesis.speak(u);
+  } catch { /* pas de voix */ }
+}
+$("s-bonjour").onclick = async () => {
+  await cmd({ p_action: "heat", p_op: "scene", p_name: "bonjour" }, "Bonjour…");
+  briefing();
+};
+
+/* ---------- Agenda ---------- */
+const isoD = (d) => d.toLocaleDateString("sv-SE");
+const onDay = (r, iso) => r.jour === iso || (r.repete === "annuel" && r.jour && r.jour.slice(5) === iso.slice(5));
+const NOMS = { guillaume: "Guillaume", marion: "Marion", tous: "Tous" };
+let ag = { y: 0, m: 0, sel: "", rows: [] };
+async function agLoad() {
+  const f = isoD(new Date(ag.y, ag.m, 1)), l = isoD(new Date(ag.y, ag.m + 1, 0));
+  const { data, error } = await sb.from("rappels").select("id,qui,jour,heure,texte,repete").eq("fait", false).or(`jour.is.null,repete.eq.annuel,and(jour.gte.${f},jour.lte.${l})`).order("heure", { nullsFirst: true });
+  if (error) toast("Agenda illisible : " + error.message, true);
+  const ic = await sb.from("agenda_icloud").select("id,qui,jour,heure,texte,lieu").gte("jour", f).lte("jour", l);
+  const ext = (ic.data || []).map((r) => ({ ...r, ext: true }));
+  ag.rows = [...(data || []), ...ext].sort((a, b) => (a.heure || "").localeCompare(b.heure || "")); agRender(); loadTodayAll();
+}
+function agRender() {
+  const first = new Date(ag.y, ag.m, 1), today = isoD(new Date());
+  $("agtitle").textContent = first.toLocaleDateString("fr-FR", { month: "long", year: "numeric" });
+  const cal = $("cal"); cal.innerHTML = "";
+  ["L", "M", "M", "J", "V", "S", "D"].forEach((d) => { const e = document.createElement("div"); e.className = "dw"; e.textContent = d; cal.appendChild(e); });
+  const lead = (first.getDay() + 6) % 7, n = new Date(ag.y, ag.m + 1, 0).getDate();
+  for (let i = 0; i < lead; i++) cal.appendChild(document.createElement("span"));
+  for (let d = 1; d <= n; d++) {
+    const iso = isoD(new Date(ag.y, ag.m, d)), b = document.createElement("button");
+    b.textContent = d;
+    b.className = (iso === today ? "today " : "") + (iso === ag.sel ? "sel " : "") + (ag.rows.some((r) => r.jour !== null && onDay(r, iso)) ? "hasr" : "");
+    b.onclick = () => { ag.sel = iso; agRender(); };
+    cal.appendChild(b);
+  }
+  $("agday").textContent = new Date(ag.sel + "T12:00").toLocaleDateString("fr-FR", { weekday: "long", day: "numeric", month: "long" });
+  const box = $("agrows"); box.innerHTML = "";
+  const day = ag.rows.filter((r) => r.jour === null || onDay(r, ag.sel));
+  if (!day.length) { const e = document.createElement("div"); e.className = "mute"; e.textContent = "Rien de prévu ce jour."; box.appendChild(e); }
+  day.forEach((r) => {
+    const e = document.createElement("div"); e.className = "ri";
+    const gg = gifFor(r.texte); if (gg) e.appendChild(gifEl(gg, true));
+    const t = document.createElement("div"); t.className = "t";
+    const w = document.createElement("div"); w.className = "w"; w.textContent = NOMS[r.qui] + (r.ext ? " · iPhone" : r.jour === null ? " · tous les jours" : r.repete === "annuel" ? " · chaque année" : "") + (r.heure ? " · " + r.heure.slice(0, 5) : "");
+    const x = document.createElement("div"); x.textContent = r.texte + (r.lieu ? " (" + r.lieu + ")" : "");
+    t.append(w, x);
+    if (r.ext) { e.append(t); box.appendChild(e); return; }
+    const del = document.createElement("button"); del.textContent = "✕"; del.setAttribute("aria-label", "Supprimer");
+    del.onclick = async () => { const { error } = await sb.from("rappels").delete().eq("id", r.id); if (error) toast(error.message, true); else agLoad(); };
+    e.append(t, del); box.appendChild(e);
+  });
+}
+function agOpen() { const d = new Date(); ag.y = d.getFullYear(); ag.m = d.getMonth(); ag.sel = isoD(d); $("agenda").classList.add("on"); agLoad(); }
+$("date").onclick = agOpen;
+$("agclose").onclick = () => $("agenda").classList.remove("on");
+$("agprev").onclick = () => { const d = new Date(ag.y, ag.m - 1, 1); ag.y = d.getFullYear(); ag.m = d.getMonth(); agLoad(); };
+$("agnext").onclick = () => { const d = new Date(ag.y, ag.m + 1, 1); ag.y = d.getFullYear(); ag.m = d.getMonth(); agLoad(); };
+$("agadd").onclick = async () => {
+  const texte = $("agtxt").value.trim(); if (!texte) return;
+  const { error } = await sb.from("rappels").insert({ qui: $("agwho").value, texte, jour: $("agrep").value === "all" ? null : ag.sel, heure: $("agtime").value || null, repete: $("agrep").value === "year" ? "annuel" : null });
+  if (error) { toast(error.message, true); return; }
+  $("agtxt").value = ""; $("agtime").value = ""; agLoad();
+};
+
+/* ---------- Alertes à l'heure du rappel ---------- */
+let todayRows = [], alertShown = new Set();
+try { alertShown = new Set(JSON.parse(localStorage.getItem("alerts-" + isoD(new Date())) || "[]")); } catch { /* rien */ }
+async function loadToday() {
+  const iso = isoD(new Date());
+  const { data } = await sb.from("rappels").select("id,qui,jour,heure,texte,repete").eq("fait", false).not("heure", "is", null).or(`jour.eq.${iso},jour.is.null,repete.eq.annuel`);
+  todayRows = (data || []).filter((r) => r.jour === null || onDay(r, iso));
+}
+/* ---------- Bandeau « Aujourd'hui » : rendez-vous et rappels datés du jour ---------- */
+let todayAll = [];
+async function loadTodayAll() {
+  const iso = isoD(new Date());
+  const [a, b] = await Promise.all([
+    sb.from("rappels").select("id,qui,jour,heure,texte,repete").eq("fait", false).or(`jour.eq.${iso},repete.eq.annuel`),
+    sb.from("agenda_icloud").select("qui,heure,texte").eq("jour", iso),
+  ]);
+  todayAll = [...(a.data || []).filter((r) => r.jour !== null && onDay(r, iso)), ...(b.data || [])]
+    .sort((x, y) => (x.heure || "").localeCompare(y.heure || ""));
+  renderToday();
+}
+function renderToday() {
+  const box = $("today"), d = new Date(), nowM = d.getHours() * 60 + d.getMinutes();
+  const mins = (h) => (h ? Number(h.slice(0, 2)) * 60 + Number(h.slice(3, 5)) : null);
+  const items = todayAll.filter((r) => r.heure === null || mins(r.heure) >= nowM - 120);
+  box.innerHTML = "";
+  items.forEach((r) => {
+    const e = document.createElement("div"), m = mins(r.heure);
+    e.className = "tdi" + (m !== null && m < nowM ? " past" : "");
+    const g = gifFor(r.texte); if (g) e.appendChild(gifEl(g, true));
+    if (r.heure) { const h = document.createElement("span"); h.className = "h"; h.textContent = r.heure.slice(0, 5); e.appendChild(h); }
+    const t = document.createElement("span"); t.textContent = r.texte; e.appendChild(t);
+    if (r.qui !== "tous") { const q = document.createElement("span"); q.className = "q"; q.textContent = NOMS[r.qui] || ""; e.appendChild(q); }
+    box.appendChild(e);
+  });
+  box.classList.toggle("on", items.length > 0);
+}
+function beep() {
+  try {
+    const c = new (window.AudioContext || window.webkitAudioContext)();
+    [0, 0.35, 0.7].forEach((t) => { const o = c.createOscillator(), g = c.createGain(); o.frequency.value = 880; g.gain.value = 0.2; o.connect(g); g.connect(c.destination); o.start(c.currentTime + t); o.stop(c.currentTime + t + 0.2); });
+  } catch { /* son bloqué */ }
+}
+function checkAlerts() {
+  const d = new Date(), hm = String(d.getHours()).padStart(2, "0") + ":" + String(d.getMinutes()).padStart(2, "0"), iso = isoD(d);
+  const due = todayRows.filter((r) => r.heure && r.heure.slice(0, 5) === hm && !alertShown.has(r.id));
+  if (!due.length) return;
+  due.forEach((r) => alertShown.add(r.id));
+  try { localStorage.setItem("alerts-" + iso, JSON.stringify([...alertShown])); } catch { /* rien */ }
+  $("alh").textContent = "Rappel · " + hm;
+  $("algif").innerHTML = ""; const ag1 = due.map((r) => gifFor(r.texte)).find(Boolean); if (ag1) $("algif").appendChild(gifEl(ag1, false));
+  $("altxt").textContent = due.map((r) => (r.qui === "tous" ? "" : NOMS[r.qui] + " : ") + r.texte).join(" — ");
+  manualSleep = false; wakeUntil = Date.now() + 120000; checkSleep();
+  $("alert").classList.add("on"); beep();
+}
+$("alok").onclick = () => $("alert").classList.remove("on");
+
+/* ---------- Démarrage ---------- */
+tick(); setInterval(tick, 10000);
+weather(); setInterval(weather, 15 * 60 * 1000);
+fetchState(); setInterval(fetchState, CONFIG.STATE_POLL_MS);
+loadToday(); setInterval(loadToday, 120000); loadTodayAll(); setInterval(loadTodayAll, 120000); setInterval(renderToday, 60000); setInterval(checkAlerts, 15000);
+keepAwake();
+sb.auth.onAuthStateChange(() => fetchState());
+if ("serviceWorker" in navigator) { /* l'écran n'a pas besoin de mode hors ligne */ }
+</script>
+</body>
+</html>
